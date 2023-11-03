@@ -7,14 +7,14 @@ from sphinx_gallery.sorting import FileNameSortKey
 from packaging.version import parse
 from MPSPlots.styles import use_mpsplots_style
 
-from MPSPlots.tools.directories import (
+from MPSTools.tools.directories import (
     project_path,
     doc_css_path,
     version_path,
 )
 
 sys.path.insert(0, project_path)
-sys.path.insert(0, os.path.join(project_path, "MPSPlots"))
+sys.path.insert(0, os.path.join(project_path, "MPSTools"))
 
 
 def setup(app):
@@ -27,7 +27,7 @@ autodoc_mock_imports = [
     'pyvista'
 ]
 
-project = 'MPSPlots'
+project = 'MPSTools'
 copyright = '2021, Martin Poinsinet de Sivry-Houle'
 author = 'Martin Poinsinet de Sivry-Houle'
 today_fmt = '%B %d, %Y'
@@ -115,14 +115,14 @@ else:
 html_theme_options = {
     # Navigation bar
     "logo": {
-        "alt_text": "MPSPlots's logo",
-        "text": "MPSPlots",
-        "link": "https://github.com/MartinPdeS/MPSPlots",
+        "alt_text": "MPSTools's logo",
+        "text": "MPSTools",
+        "link": "https://github.com/MartinPdeS/MPSTools",
     },
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/MartinPdeS/MPSPlots",
+            "url": "https://github.com/MartinPdeS/MPSTools",
             "icon": "fa-brands fa-github",
         },
         {
@@ -144,23 +144,23 @@ html_theme_options = {
 }
 
 
-htmlhelp_basename = 'MPSPlotsdoc'
+htmlhelp_basename = 'MPSToolsdoc'
 
 latex_elements = {}
 
 latex_documents = [
-    (master_doc, 'MPSPlots.tex', 'MPSPlots Documentation',
+    (master_doc, 'MPSTools.tex', 'MPSTools Documentation',
      'Martin Poinsinet de Sivry-Houle', 'manual'),
 ]
 
 man_pages = [
-    (master_doc, 'pymiesim', 'MPSPlots Documentation',
+    (master_doc, 'pymiesim', 'MPSTools Documentation',
      [author], 1)
 ]
 
 texinfo_documents = [
-    (master_doc, 'MPSPlots', 'MPSPlots Documentation',
-     author, 'MPSPlots', 'One line description of project.',
+    (master_doc, 'MPSTools', 'MPSTools Documentation',
+     author, 'MPSTools', 'One line description of project.',
      'Miscellaneous'),
 ]
 

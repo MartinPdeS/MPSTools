@@ -7,7 +7,7 @@ import numpy
 from pathlib import Path
 
 from PyFiberModes import FiberFactory
-from MPSTools.fiber_catalogue.material import get_silica_index
+from MPSTools.material_catalogue.loader import get_silica_index
 
 
 def load_fiber_as_dict(fiber_name: str, wavelength: float = None) -> dict:
@@ -15,7 +15,7 @@ def load_fiber_as_dict(fiber_name: str, wavelength: float = None) -> dict:
 
     file = Path(f'./fiber_files/{fiber_name}.yaml')
 
-    assert file.exists(), f'Fiber files: {fiber_name} does not exist.'
+    assert file.exists(), f'Fiber file: {fiber_name} does not exist.'
 
     configuration = yaml.safe_load(file.read_text())
 

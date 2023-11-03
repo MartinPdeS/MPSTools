@@ -27,7 +27,7 @@ jobs:
                 package-name: MPSTools
                 python-version: "3.10"
                 auth: ${{ secrets.MPdS_gist_token }}
-                gistID: c4f12a9ab97461a9453d9a174ae88e17
+                gistID: 4821576a7d9cca4b7c6c9c49305bc161
 
     publish_documentation:
         if: "contains(github.event.head_commit.message, '[publish]')"

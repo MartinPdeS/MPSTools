@@ -26,7 +26,7 @@ jobs:
             with:
                 package-name: MPSTools
                 python-version: "3.10"
-                auth: ${{ secrets.MPdS_gist_token }}
+                auth: ${{ secrets.GIST_TOKEN }}
                 gistID: 4821576a7d9cca4b7c6c9c49305bc161
 
     publish_documentation:

@@ -1,0 +1,4 @@
+MPSPlots
+numpy
+matplotlib
+pathvalidate

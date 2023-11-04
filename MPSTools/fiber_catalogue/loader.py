@@ -9,18 +9,21 @@ from pathlib import Path
 from MPSTools.material_catalogue.loader import get_silica_index
 
 
-def load_fiber_as_dict(fiber_name: str, wavelength: float = None) -> dict:
+def load_fiber_as_dict(fiber_name: str, wavelength: float = None, order: str = 'in-to-out') -> dict:
     """
     Loads the fiber parameters as dictionary.
 
     :param      fiber_name:      The fiber name
     :type       fiber_name:      str
-    :param      wavelength:      The wavelength, can be None if no material is describing the fiber
+    :param      wavelength:      he wavelength, can be None if no material is describing the fiber
     :type       wavelength:      float
+    :param      order:           The order of the layer ['in-to-out' or 'out-to-in']
+    :type       order:           str
 
-    :returns:   The fiber parameters
+    :returns:   The fiber parameters dictionnary
     :rtype:     dict
     """
+    assert order.lower() in ['in-to-out', 'out-to-in'], f'Order: {order} has to be either "in-to-out" or "out-to-in"'
     output_dict = {}
 
     cwd = Path(__file__).parent
@@ -56,6 +59,13 @@ def load_fiber_as_dict(fiber_name: str, wavelength: float = None) -> dict:
             output_dict[layer_idx]['index'] = get_silica_index(wavelength=wavelength)
 
         outer_layer = output_dict[layer_idx]
+
+    if order == 'out-to-in':
+        reversed_dict = {}
+        for key in reversed(list(output_dict.keys())):
+            reversed_dict[key] = output_dict[key]
+
+        return reversed_dict
 
     return output_dict
 

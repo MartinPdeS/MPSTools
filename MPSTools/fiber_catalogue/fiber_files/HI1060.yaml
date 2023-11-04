@@ -1,4 +1,5 @@
 # always from the outer-mode to inner-most
+# Specs: https://www.corning.com/media/worldwide/csm/documents/HI%201060%20Specialty%20Fiber%20PDF.pdf
 
 layers:
   layer_0:

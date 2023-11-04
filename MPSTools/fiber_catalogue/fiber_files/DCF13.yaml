@@ -18,6 +18,6 @@ layers:
 
   layer_2:
     name: 'core'
-    radius: Error here
+    radius: 52.5e-6
     NA: 0.12
 

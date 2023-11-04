@@ -3,18 +3,7 @@
 
 import numpy
 import yaml
-
 from pathlib import Path
-
-
-silica_parameters = dict(
-    A_0=0.6961663,  # numerator
-    A_1=0.0684043,  # denominator
-    B_0=0.4079426,
-    B_1=0.1162414,
-    C_0=0.8974794,
-    C_1=9.896161,
-)
 
 
 def load_material_parameters(material_name: str) -> dict:
@@ -116,8 +105,4 @@ def get_silica_index(wavelength: float) -> float:
 
     return index
 
-
-if __name__ == '__main__':
-    silica_index = get_silica_index(wavelength=1550e-9)
-
-    print(silica_index)
+# -

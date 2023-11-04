@@ -6,7 +6,7 @@ import numpy
 
 from pathlib import Path
 
-from MPSTools.material_catalogue.loader import get_silica_index
+from MPSTools.material_catalogue.loader import get_material_index
 
 
 def load_fiber_as_dict(fiber_name: str, wavelength: float = None, order: str = 'in-to-out') -> dict:
@@ -34,6 +34,8 @@ def load_fiber_as_dict(fiber_name: str, wavelength: float = None, order: str = '
 
     configuration = yaml.safe_load(file.read_text())
 
+    copy_configuration = configuration
+
     outer_layer = None
     for layer_idx, current_layer in configuration['layers'].items():
 
@@ -54,9 +56,12 @@ def load_fiber_as_dict(fiber_name: str, wavelength: float = None, order: str = '
             assert bool(outer_layer), 'Cannot compute NA if no outer layer is defined.'
             output_dict[layer_idx]['index'] = numpy.sqrt(NA**2 + outer_layer.get('index')**2)
 
-        if material == 'silica':
+        if material is not None:
             assert bool(wavelength), 'Cannot evaluate material refractive index if wavelength is not provided.'
-            output_dict[layer_idx]['index'] = get_silica_index(wavelength=wavelength)
+            output_dict[layer_idx]['index'] = get_material_index(
+                material_name=material,
+                wavelength=wavelength
+            )
 
         outer_layer = output_dict[layer_idx]
 
@@ -65,9 +70,14 @@ def load_fiber_as_dict(fiber_name: str, wavelength: float = None, order: str = '
         for key in reversed(list(output_dict.keys())):
             reversed_dict[key] = output_dict[key]
 
-        return reversed_dict
+        output_dict = reversed_dict
 
-    return output_dict
+    for _, layer in output_dict.items():
+        layer.pop("NA", None)
+        layer.pop("material", None)
 
+    copy_configuration['layers'] = output_dict
+
+    return copy_configuration
 
 # -

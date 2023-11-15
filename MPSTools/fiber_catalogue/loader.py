@@ -54,7 +54,8 @@ def load_fiber_as_dict(fiber_name: str, wavelength: float = None, order: str = '
 
         if NA is not None:
             assert bool(outer_layer), 'Cannot compute NA if no outer layer is defined.'
-            output_dict[layer_idx]['index'] = numpy.sqrt(NA**2 + outer_layer.get('index')**2)
+            outer_index = outer_layer.get('index')
+            output_dict[layer_idx]['index'] = numpy.sqrt(NA**2 + outer_index**2)
 
         if material is not None:
             assert bool(wavelength), 'Cannot evaluate material refractive index if wavelength is not provided.'

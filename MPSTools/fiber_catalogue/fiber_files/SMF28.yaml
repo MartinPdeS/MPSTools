@@ -8,7 +8,7 @@ layers:
     index: 1.
 
   layer_1:
-    name: 'clad'
+    name: 'cladding'
     radius: 62.5e-6
     material: silica
 

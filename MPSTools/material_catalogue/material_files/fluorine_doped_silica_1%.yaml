@@ -2,6 +2,7 @@
 # Values from : https://opg.optica.org/directpdfaccess/d4c1352d-90ca-4c3e-a7545be751547d7a_26968/ao-22-19-3102.pdf?da=1&id=26968&seq=0&mobile=no
 
 sellmeier:
+  reference: https://opg.optica.org/directpdfaccess/d4c1352d-90ca-4c3e-a7545be751547d7a_26968/ao-22-19-3102.pdf?da=1&id=26968&seq=0&mobile=no
   C_squared: True
 
   B_1: 0.69325

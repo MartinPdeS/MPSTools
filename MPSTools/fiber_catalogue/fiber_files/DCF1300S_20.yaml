@@ -8,7 +8,7 @@ layers:
 
   layer_2:
     name: 'inner-clad'
-    radius: 16.5e-6
+    radius: 10.0e-6
     NA: 0.11
 
   layer_3:

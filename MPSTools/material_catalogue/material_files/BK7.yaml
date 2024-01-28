@@ -2,6 +2,7 @@
 # Values from : https://refractiveindex.info/?shelf=glass&book=BK7&page=SCHOTT
 
 sellmeier:
+  reference: https://refractiveindex.info/?shelf=glass&book=BK7&page=SCHOTT
   C_squared: False
 
   B_1: 1.0396121

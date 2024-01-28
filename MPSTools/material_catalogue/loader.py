@@ -4,6 +4,27 @@
 import numpy
 import yaml
 from pathlib import Path
+import os
+
+
+def list_materials() -> None:
+    """
+    Prints the list of SellMeier material files.
+
+    :returns:   No return
+    :rtype:     None
+    """
+    cwd = Path(__file__).parent
+
+    material_folder = cwd.joinpath('./material_files')
+
+    list_of_material = os.listdir(material_folder)
+
+    list_of_material = [
+        material_name[:-5] + '\n' for material_name in list_of_material
+    ]
+
+    print('\n', *list_of_material)
 
 
 def load_material_parameters(material_name: str) -> dict:
@@ -20,7 +41,12 @@ def load_material_parameters(material_name: str) -> dict:
 
     file = cwd.joinpath(f'./material_files/{material_name}.yaml')
 
-    assert file.exists(), f'Material file: {file} does not exist.'
+    if not file.exists():
+        material_folder = cwd.joinpath('./material_files')
+        list_of_material = os.listdir(material_folder)
+        raise ValueError(
+            f'Material file: {file} does not exist. Valid file list is {list_of_material}'
+        )
 
     configuration = yaml.safe_load(file.read_text())
 

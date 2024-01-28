@@ -2,6 +2,7 @@
 # Values from : https://refractiveindex.info/?shelf=main&book=SiO2&page=Malitson
 
 sellmeier:
+  reference: https://refractiveindex.info/?shelf=main&book=SiO2&page=Malitson
   C_squared: True
 
   B_1: 0.6961663

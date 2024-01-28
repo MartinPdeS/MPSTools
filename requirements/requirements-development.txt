@@ -1,3 +1,19 @@
--r requirements.txt
--r requirements-documentation.txt
--r requirements-testing.txt
+pyyaml
+numpy
+pathvalidate
+pandas
+
+Jinja2==3.1.2
+sphinx>=5.1.1
+sphinx-gallery>=0.11.1
+sphinx-rtd-theme>=1.0.0
+numpydoc==1.5.0
+pydata-sphinx-theme
+
+pytest>=0.6
+pytest-cov>=2.0
+pytest-json-report
+mypy>=0.910
+flake8>=3.9
+tox>=3.24
+coverage

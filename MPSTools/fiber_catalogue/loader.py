@@ -3,7 +3,6 @@
 
 import yaml
 import numpy
-
 from pathlib import Path
 
 from MPSTools.material_catalogue.loader import get_material_index

@@ -2,3 +2,4 @@ pyyaml
 numpy
 pathvalidate
 pandas
+MPSPlots

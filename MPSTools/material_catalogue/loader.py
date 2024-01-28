@@ -5,6 +5,8 @@ import numpy
 import yaml
 from pathlib import Path
 import os
+import io
+import pandas
 
 
 def list_materials() -> None:
@@ -16,15 +18,27 @@ def list_materials() -> None:
     """
     cwd = Path(__file__).parent
 
-    material_folder = cwd.joinpath('./material_files')
+    sellmeier_folder = cwd.joinpath('./material_files/sellmeier')
 
-    list_of_material = os.listdir(material_folder)
+    measurment_folder = cwd.joinpath('./material_files/measurements')
 
+    list_of_sellmeier_files = os.listdir(sellmeier_folder)
+
+    list_of_measurement_files = os.listdir(measurment_folder)
+
+    print('Sellmeier files:')
     list_of_material = [
-        material_name[:-5] + '\n' for material_name in list_of_material
+        '\t' + material_name[:-5] + '\n' for material_name in list_of_sellmeier_files
     ]
 
-    print('\n', *list_of_material)
+    print(*list_of_material)
+
+    print('Measurment files:')
+    list_of_material = [
+        '\t' + material_name[:-4] + '\n' for material_name in list_of_measurement_files
+    ]
+
+    print(*list_of_material)
 
 
 def load_material_parameters(material_name: str) -> dict:
@@ -39,10 +53,10 @@ def load_material_parameters(material_name: str) -> dict:
     """
     cwd = Path(__file__).parent
 
-    file = cwd.joinpath(f'./material_files/{material_name}.yaml')
+    file = cwd.joinpath(f'./material_files/sellmeier/{material_name}.yaml')
 
     if not file.exists():
-        material_folder = cwd.joinpath('./material_files')
+        material_folder = cwd.joinpath('./material_files/sellmeier')
         list_of_material = os.listdir(material_folder)
         raise ValueError(
             f'Material file: {file} does not exist. Valid file list is {list_of_material}'
@@ -130,5 +144,77 @@ def get_silica_index(wavelength: float) -> float:
     )
 
     return index
+
+
+def load_material_measurements(material_name: str) -> dict:
+    """
+    Loads a material parameters from a yaml file.
+
+    :param      material_name:  The wavelength in unit of meters
+    :type       material_name:  str
+
+    :returns:   The material parameters
+    :rtype:     dict
+    """
+    cwd = Path(__file__).parent
+
+    material_folder = cwd.joinpath('./material_files/measurements')
+
+    material_folder = Path(material_folder)
+
+    file = material_folder.joinpath(f'{material_name}.yml')
+
+    if not file.exists():
+        list_of_material = os.listdir(material_folder)
+        raise ValueError(
+            f'Material file: {file} does not exist. Valid file list is {list_of_material}'
+        )
+
+    configuration = yaml.safe_load(file.read_text())
+
+    return configuration
+
+
+def get_material_measurment_index(material_name: str, wavelength: float) -> float:
+    """
+    Gets the material refractive index interpolating from measured data.
+
+    :param      material_name:  The material name
+    :type       material_name:  str
+    :param      wavelength:     The wavelength in unit of meters
+    :type       wavelength:     float
+
+    :returns:   The material refractive index.
+    :rtype:     float
+    """
+    return_scalar = True if numpy.isscalar(wavelength) else False
+
+    wavelength = numpy.atleast_1d(wavelength) * 1e6
+
+    material_parameters = load_material_measurements(material_name=material_name)
+
+    data_string = material_parameters['DATA'][0]['data']
+
+    buffer = io.StringIO(data_string)
+
+    data = pandas.read_csv(buffer, sep=' ').to_numpy()
+
+    wavelength_base, n_base, k_base = data.T
+
+    refractive_index_base = n_base + k_base * 1j
+
+    evaluated_refractive_index = numpy.interp(
+        wavelength,
+        wavelength_base,
+        refractive_index_base,
+        left=None,
+        right=None,
+        period=None
+    )
+
+    if return_scalar:
+        return evaluated_refractive_index[0]
+
+    return evaluated_refractive_index
 
 # -

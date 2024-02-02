@@ -40,20 +40,42 @@ class CartesianCoordinates:
     is_3D: bool = False
 
     @property
-    def min_x(self) -> float:
-        return numpy.min(self.x_bounds)
+    def x_boundaries(self) -> float:
+        return numpy.min(self.x), numpy.max(self.x)
 
     @property
-    def max_x(self) -> float:
-        return numpy.max(self.x_bounds)
+    def y_boundaries(self) -> float:
+        return numpy.min(self.y), numpy.max(self.y)
 
     @property
-    def min_y(self) -> float:
-        return numpy.min(self.y_bounds)
+    def dx(self) -> float:
+        if self.is_structured:
+            x_min, x_max = self.x_boundaries()
+            delta_x = x_max - x_min
+            return delta_x / self.n_x
+
+        else:
+            raise ValueError('dx value cannot be infered from unstructured mesh')
 
     @property
-    def max_y(self) -> float:
-        return numpy.max(self.y_bounds)
+    def dy(self) -> float:
+        if self.is_structured:
+            y_min, y_max = self.x_boundaries()
+            delta_y = y_max - y_min
+            return delta_y / self.n_y
+
+        else:
+            raise ValueError('dy value cannot be infered from unstructured mesh')
+
+    @property
+    def dz(self) -> float:
+        if self.is_structured:
+            z_min, z_max = self.x_boundaries()
+            delta_z = z_max - z_min
+            return delta_z / self.n_z
+
+        else:
+            raise ValueError('dz value cannot be infered from unstructured mesh')
 
     @classmethod
     def generate_from_boundaries(
@@ -117,10 +139,10 @@ class CartesianCoordinates:
 
         instance.is_structured = True
         instance.is_3D = True
-
-        instance.dx = abs(x[1] - x[0])
-        instance.dy = abs(y[1] - y[0])
-        instance.dz = abs(z[1] - z[0])
+        # instance.dx = abs(x[1] - x[0])
+        # instance.dy = abs(y[1] - y[0])
+        # instance.dz = abs(z[1] - z[0])
+        instance.n_x = instance.n_y, instance.n_z = n_points
 
         return instance
 
@@ -147,6 +169,8 @@ class CartesianCoordinates:
         x = numpy.linspace(-length / 2, length / 2, n_points) + x0
         y = numpy.linspace(-length / 2, length / 2, n_points) + y0
 
+        cls.n_x = cls.n_y = n_points
+
         x_mesh, y_mesh = numpy.meshgrid(y, x)
 
         instance = CartesianCoordinates(
@@ -157,9 +181,108 @@ class CartesianCoordinates:
 
         instance.is_structured = True
         instance.is_3D = False
+        # instance.dx = abs(x[1] - x[0])
+        # instance.dy = abs(y[1] - y[0])
+        instance.n_x = instance.n_y = n_points
 
+        return instance
+
+    @classmethod
+    def generate_from_fibonacci_2D(
+            cls,
+            radius: float,
+            center: tuple = (0, 0),
+            n_points: int = 100):
+        """
+        Construct the coordinate system from a unstructured Fibonacci mesh.
+
+        :param      cls:       The cls
+        :type       cls:       CartesianCoordinates
+        :param      length:    The length of the side of the square
+        :type       length:    float
+        :param      center:    The center
+        :type       center:    tuple
+        :param      n_points:  The number of points for each dimension [x, y]
+        :type       n_points:  int
+        """
+        x0, y0 = center
+
+        alpha = 0
+        golden_ratio = (1 + numpy.sqrt(5)) / 2  # golden ratio
+
+        angle_stride = 360 * golden_ratio
+
+        b = round(alpha * numpy.sqrt(n_points))  # number of boundary points
+
+        x, y = numpy.zeros(n_points), numpy.zeros(n_points)
+
+        theta = numpy.arange(1, n_points + 1) * angle_stride
+
+        radius = numpy.ones(n_points)
+
+        idx_list = numpy.arange(1, n_points + 1)
+
+        radius = numpy.sqrt(idx_list - 0.5) / numpy.sqrt(n_points - (b + 1) / 2)
+
+        radius[idx_list > n_points - b] = 1
+
+        x = radius.copy() * numpy.cos(theta) + x0
+        y = radius.copy() * numpy.sin(theta) + y0
+
+        instance = CartesianCoordinates(
+            x=x.ravel(),
+            y=y.ravel(),
+            z=0
+        )
+        instance.is_structured = False
+        instance.is_3D = False
+        instance.n_x = instance.n_y = n_points
+
+        return instance
+
+    def radius(idx, n_points, b):
+        if idx > n_points - b:
+            return 1.0
+        else:
+            return numpy.sqrt(idx - 0.5) / numpy.sqrt(n_points - (b + 1) / 2)
+
+    @classmethod
+    def generate_from_disc(
+            cls,
+            radius: float,
+            center: tuple = (0, 0),
+            n_points: int = 100):
+        """
+        Construct the coordinate system from a structured square structure.
+
+        :param      cls:       The cls
+        :type       cls:       CartesianCoordinates
+        :param      length:    The length of the side of the square
+        :type       length:    float
+        :param      center:    The center
+        :type       center:    tuple
+        :param      n_points:  The number of points for each dimension [x, y]
+        :type       n_points:  int
+        """
+        x0, y0 = center
+
+        rho = numpy.linspace(0, radius, n_points)
+        phi = numpy.linspace(0, 2 * numpy.pi, n_points)
+
+        x = numpy.outer(rho, numpy.cos(phi)) + x0
+        y = numpy.outer(rho, numpy.sin(phi)) + y0
+
+        instance = CartesianCoordinates(
+            x=x.ravel(),
+            y=y.ravel(),
+            z=0
+        )
+
+        instance.is_structured = True
+        instance.is_3D = False
         instance.dx = abs(x[1] - x[0])
         instance.dy = abs(y[1] - y[0])
+        instance.n_x = instance.n_y = n_points
 
         return instance
 
@@ -172,9 +295,10 @@ class CartesianCoordinates:
             phi=phi,
             z=self.z
         )
+
         return cylindrical_coordinate
 
-    def to_cartesian(self):
+    def to_cartesian(self) -> Self:
         return self
 
     def shift_coordinates(self, shift: tuple) -> Self:
@@ -256,11 +380,32 @@ class CartesianCoordinates:
 
         return scene
 
+    def centering(self) -> None:
+        """
+        Recenter the coordinates around the value zero
 
-a = CartesianCoordinates.generate_from_square(length=10, n_points=10)
+        :param      factor:         The factor
+        :type       factor:         float
+        :param      zero_included:  Indicates if zero included
+        :type       zero_included:  bool
+
+        :returns:   { description_of_the_return_value }
+        :rtype:     None
+        """
+        x_mean = self.x.mean()
+        y_mean = self.y.mean()
+
+        self.shift_coordinates([x_mean, y_mean])
+
+
+a = CartesianCoordinates.generate_from_square(length=10, n_points=11)
+# a = CartesianCoordinates.generate_from_fibonacci_2D(radius=10, n_points=200)
 # a.shift_coordinates([10, 0])
+# print(a.max_x)
+# a.shift_coordinates([3, 1, 1])
 
-a.shift_coordinates([3, 1, 1])
+a.centering()
+
 
 a.plot().show()
 

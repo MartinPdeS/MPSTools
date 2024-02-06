@@ -398,18 +398,6 @@ class CartesianCoordinates:
         self.shift_coordinates([x_mean, y_mean])
 
 
-a = CartesianCoordinates.generate_from_square(length=10, n_points=11)
-# a = CartesianCoordinates.generate_from_fibonacci_2D(radius=10, n_points=200)
-# a.shift_coordinates([10, 0])
-# print(a.max_x)
-# a.shift_coordinates([3, 1, 1])
-
-a.centering()
-
-
-a.plot().show()
-
-
 def vector_cyl2cart(cylindrical_vector: numpy.ndarray, vector_position: CartesianCoordinates | CylindricalCoordinates) -> tuple:
     """
     Takes a cylindrical vector as inputs as well as its cartesian position and returns

@@ -2,82 +2,118 @@
 # -*- coding: utf-8 -*-
 
 import yaml
-import numpy
+import numpy as np
 from pathlib import Path
-
 from MPSTools.material_catalogue.loader import get_material_index
+
+
+def get_fiber_file_path(fiber_name: str) -> Path:
+    """
+    Determines the file path for the given fiber name.
+
+    Parameters:
+    - fiber_name: The name of the fiber.
+
+    Returns:
+    - A Path object pointing to the fiber file.
+    """
+    return Path(__file__).parent / 'fiber_files' / f'{fiber_name}.yaml'
+
+
+def load_yaml_configuration(file_path: Path) -> dict:
+    """
+    Loads the YAML configuration from a file.
+
+    Parameters:
+    - file_path: Path object pointing to the YAML file.
+
+    Returns:
+    - A dictionary containing the loaded YAML configuration.
+    """
+    with file_path.open('r') as file:
+        return yaml.safe_load(file)
+
+
+def process_layers(layers: dict, wavelength: float = None) -> dict:
+    """
+    Processes the layers in the configuration, calculating indices as necessary.
+
+    Parameters:
+    - layers: A dictionary of layers from the configuration.
+    - wavelength: Optional; wavelength for material index calculation.
+
+    Returns:
+    - A dictionary of processed layers with calculated indices.
+    """
+    processed_layers = {}
+    outer_layer = None
+    for idx, layer in layers.items():
+        layer_index = layer.get('index')
+        if 'material' in layer and wavelength:
+            layer_index = get_material_index(layer['material'], wavelength)
+        elif 'NA' in layer and outer_layer:
+            layer_index = np.sqrt(layer['NA']**2 + outer_layer['index']**2)
+
+        processed_layers[idx] = {**layer, 'index': layer_index}
+        outer_layer = processed_layers[idx]
+
+    return processed_layers
+
+
+def cleanup_layers(layers: dict) -> dict:
+    """
+    Removes unnecessary keys from each layer in the dictionary.
+
+    Parameters:
+    - layers: The dictionary of processed layers.
+
+    Returns:
+    - The cleaned-up dictionary of layers.
+    """
+    for layer in layers.values():
+        layer.pop('NA', None)
+        layer.pop('material', None)
+    return layers
+
+
+def reorder_layers_if_needed(layers: dict, order: str) -> dict:
+    """
+    Reorders the layers if required.
+
+    Parameters:
+    - layers: The dictionary of layers to potentially reorder.
+    - order: The order to apply ('in-to-out' or 'out-to-in').
+
+    Returns:
+    - The reordered (if needed) dictionary of layers.
+    """
+    if order == 'out-to-in':
+        return {k: layers[k] for k in reversed(layers)}
+    return layers
 
 
 def load_fiber_as_dict(fiber_name: str, wavelength: float = None, order: str = 'in-to-out') -> dict:
     """
-    Loads the fiber parameters as dictionary.
+    Main function to load and process fiber configuration.
 
-    :param      fiber_name:      The fiber name
-    :type       fiber_name:      str
-    :param      wavelength:      he wavelength, can be None if no material is describing the fiber
-    :type       wavelength:      float
-    :param      order:           The order of the layer ['in-to-out' or 'out-to-in']
-    :type       order:           str
+    Parameters:
+    - fiber_name: Name of the fiber file without extension.
+    - wavelength: Optional; wavelength to use for material index calculation.
+    - order: Layer order in the output dictionary; either 'in-to-out' or 'out-to-in'.
 
-    :returns:   The fiber parameters dictionnary
-    :rtype:     dict
+    Returns:
+    - Dictionary containing the processed fiber configuration.
     """
-    assert order.lower() in ['in-to-out', 'out-to-in'], f'Order: {order} has to be either "in-to-out" or "out-to-in"'
-    output_dict = {}
+    file_path = get_fiber_file_path(fiber_name)
+    if not file_path.exists():
+        available = '\n'.join(f.stem for f in file_path.parent.glob('*.yaml'))
+        raise FileNotFoundError(f'Fiber file {fiber_name}.yaml not found. Available fibers: \n{available}')
 
-    cwd = Path(__file__).parent
+    config = load_yaml_configuration(file_path)
+    processed_layers = process_layers(config['layers'], wavelength)
+    processed_layers = cleanup_layers(processed_layers)
+    processed_layers = reorder_layers_if_needed(processed_layers, order)
 
-    file = cwd.joinpath(f'./fiber_files/{fiber_name}.yaml')
-
-    assert file.exists(), f'Fiber file: {fiber_name} does not exist.'
-
-    configuration = yaml.safe_load(file.read_text())
-
-    copy_configuration = configuration
-
-    outer_layer = None
-    for layer_idx, current_layer in configuration['layers'].items():
-
-        output_dict[layer_idx] = current_layer
-
-        index = current_layer.get('index')
-        NA = current_layer.get('NA')
-        name = current_layer.get('name')
-        radius = current_layer.get('radius')
-        material = current_layer.get('material')
-
-        if outer_layer is not None:
-            assert radius <= outer_layer.get('radius'), f'Layer declaration order for {file} is not from outer-most to inner-most as it should be.'
-
-        assert numpy.count_nonzero([material, NA, index]), f"Either NA or index has to be provided for the layer: {name}."
-
-        if NA is not None:
-            assert bool(outer_layer), 'Cannot compute NA if no outer layer is defined.'
-            outer_index = outer_layer.get('index')
-            output_dict[layer_idx]['index'] = numpy.sqrt(NA**2 + outer_index**2)
-
-        if material is not None:
-            assert bool(wavelength), 'Cannot evaluate material refractive index if wavelength is not provided.'
-            output_dict[layer_idx]['index'] = get_material_index(
-                material_name=material,
-                wavelength=wavelength
-            )
-
-        outer_layer = output_dict[layer_idx]
-
-    if order == 'out-to-in':
-        reversed_dict = {}
-        for key in reversed(list(output_dict.keys())):
-            reversed_dict[key] = output_dict[key]
-
-        output_dict = reversed_dict
-
-    for _, layer in output_dict.items():
-        layer.pop("NA", None)
-        layer.pop("material", None)
-
-    copy_configuration['layers'] = output_dict
-
-    return copy_configuration
+    return {'layers': processed_layers}
 
 # -

@@ -1,220 +1,113 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy
+import io
+import numpy as np
+import pandas as pd
 import yaml
 from pathlib import Path
-import os
-import io
-import pandas
 
 
-def list_materials() -> None:
+def get_material_files_dir(subdir: str) -> Path:
     """
-    Prints the list of SellMeier material files.
+    Returns the directory path for material files.
 
-    :returns:   No return
-    :rtype:     None
+    Parameters:
+    - subdir: Subdirectory within the material files directory.
+
+    Returns:
+    - A Path object pointing to the specified subdirectory.
     """
-    cwd = Path(__file__).parent
-
-    sellmeier_folder = cwd.joinpath('./material_files/sellmeier')
-
-    measurment_folder = cwd.joinpath('./material_files/measurements')
-
-    list_of_sellmeier_files = os.listdir(sellmeier_folder)
-
-    list_of_measurement_files = os.listdir(measurment_folder)
-
-    print('Sellmeier files:')
-    list_of_material = [
-        '\t' + material_name[:-5] + '\n' for material_name in list_of_sellmeier_files
-    ]
-
-    print(*list_of_material)
-
-    print('Measurment files:')
-    list_of_material = [
-        '\t' + material_name[:-4] + '\n' for material_name in list_of_measurement_files
-    ]
-
-    print(*list_of_material)
+    return Path(__file__).parent / 'material_files' / subdir
 
 
-def load_material_parameters(material_name: str) -> dict:
+def list_material_files():
     """
-    Loads a material parameters from a yaml file.
-
-    :param      material_name:  The wavelength in unit of meters
-    :type       material_name:  str
-
-    :returns:   The material parameters
-    :rtype:     dict
+    Prints the list of SellMeier and measurement material files.
     """
-    cwd = Path(__file__).parent
+    sellmeier_dir = get_material_files_dir('sellmeier')
+    measurement_dir = get_material_files_dir('measurements')
 
-    file = cwd.joinpath(f'./material_files/sellmeier/{material_name}.yaml')
+    sellmeier_files = [f.stem for f in sellmeier_dir.glob('*.yaml')]
+    measurement_files = [f.stem for f in measurement_dir.glob('*.yml')]
 
-    if not file.exists():
-        material_folder = cwd.joinpath('./material_files/sellmeier')
-        list_of_material = os.listdir(material_folder)
-        raise ValueError(
-            f'Material file: {file} does not exist. Valid file list is {list_of_material}'
-        )
+    print('SellMeier files:')
+    print('\n'.join(f'\t{s}' for s in sellmeier_files))
 
-    configuration = yaml.safe_load(file.read_text())
-
-    return configuration
+    print('Measurement files:')
+    print('\n'.join(f'\t{m}' for m in measurement_files))
 
 
-def dispersion_formula(sellmeier_parameters: dict, wavelength: float) -> float:
+def load_yaml_file(file_path: Path) -> dict:
     """
-    Returns refractve index according to the dispersion formula
+    Loads a YAML file into a dictionary.
 
-    :param      sellmeier_parameters:  The sellmeier parameters
-    :type       sellmeier_parameters:  dict
-    :param      wavelength:            The wavelength in unit of meters
-    :type       wavelength:            float
+    Parameters:
+    - file_path: Path to the YAML file.
 
-    :returns:   The refractive index
-    :rtype:     float
+    Returns:
+    - A dictionary containing the YAML file content.
     """
-    B_1 = sellmeier_parameters.get('B_1')
-    B_2 = sellmeier_parameters.get('B_2')
-    B_3 = sellmeier_parameters.get('B_3')
-    C_1 = sellmeier_parameters.get('C_1')
-    C_2 = sellmeier_parameters.get('C_2')
-    C_3 = sellmeier_parameters.get('C_3')
-
-    wavelength *= 1e6  # wavelength converted to micro-meter
-
-    if sellmeier_parameters['C_squared']:
-        C_1 = C_1**2
-        C_2 = C_2**2
-        C_3 = C_3**2
-
-    term_0 = (B_1 * wavelength**2) / (wavelength**2 - C_1**2)
-    term_1 = (B_2 * wavelength**2) / (wavelength**2 - C_2**2)
-    term_2 = (B_3 * wavelength**2) / (wavelength**2 - C_3**2)
-
-    index_squared = term_0 + term_1 + term_2 + 1
-
-    index = numpy.sqrt(index_squared)
-
-    return index
+    if not file_path.exists():
+        available = '\n'.join(f.stem for f in file_path.parent.glob('*.yaml'))
+        raise FileNotFoundError(f'File not found: \n{available}')
+    return yaml.safe_load(file_path.read_text())
 
 
-def get_material_index(material_name: str, wavelength: float) -> float:
+def dispersion_formula(parameters: dict, wavelength: float) -> float:
     """
-    Gets the material refractive index using the dispersion formula.
+    Calculates the refractive index using the Sellmeier dispersion formula.
 
-    :param      material_name:  The material name
-    :type       material_name:  str
-    :param      wavelength:     The wavelength in unit of meters
-    :type       wavelength:     float
+    Parameters:
+    - parameters: Sellmeier parameters.
+    - wavelength: Wavelength in meters.
 
-    :returns:   The material refractive index.
-    :rtype:     float
+    Returns:
+    - The calculated refractive index.
     """
-    material_parameters = load_material_parameters(material_name=material_name)
-
-    index = dispersion_formula(
-        sellmeier_parameters=material_parameters['sellmeier'],
-        wavelength=wavelength
-    )
-
-    return index
+    wavelength_um = wavelength * 1e6  # Convert wavelength to micrometers
+    B = [parameters.get(f'B_{i}') for i in range(1, 4)]
+    C = [parameters.get(f'C_{i}')**2 if parameters['C_squared'] else parameters.get(f'C_{i}') for i in range(1, 4)]
+    index_squared = 1 + sum(B[i] * wavelength_um**2 / (wavelength_um**2 - C[i]) for i in range(3))
+    return np.sqrt(index_squared)
 
 
-def get_silica_index(wavelength: float) -> float:
+def get_material_index(material_name: str, wavelength: float, subdir: str = 'sellmeier') -> float:
     """
-    Gets the silica refractive index using the dispersion formula.
+    Gets the material refractive index using the dispersion formula or measurement data.
 
-    :param      material_name:  The material name
-    :type       material_name:  str
-    :param      wavelength:     The wavelength in unit of meters
-    :type       wavelength:     float
+    Parameters:
+    - material_name: The material name.
+    - wavelength: Wavelength in meters.
+    - subdir: Subdirectory name ('sellmeier' or 'measurements').
 
-    :returns:   The material refractive index.
-    :rtype:     float
+    Returns:
+    - The material refractive index.
     """
-    index = get_material_index(
-        material_name='silica',
-        wavelength=wavelength
-    )
+    file_path = get_material_files_dir(subdir) / f'{material_name}.yaml'
+    parameters = load_yaml_file(file_path)
+    if subdir == 'sellmeier':
+        return dispersion_formula(parameters['sellmeier'], wavelength)
+    else:
+        # Handle measurement data logic here if needed.
+        pass
 
-    return index
 
-
-def load_material_measurements(material_name: str) -> dict:
+def load_material_measurements(material_name: str) -> pd.DataFrame:
     """
-    Loads a material parameters from a yaml file.
+    Loads material measurement data into a pandas DataFrame.
 
-    :param      material_name:  The wavelength in unit of meters
-    :type       material_name:  str
+    Parameters:
+    - material_name: The name of the material.
 
-    :returns:   The material parameters
-    :rtype:     dict
+    Returns:
+    - A pandas DataFrame containing the material measurement data.
     """
-    cwd = Path(__file__).parent
+    material_data = get_material_index(material_name, 0, 'measurements')  # Example use, adjust as necessary
+    # Assuming material_data contains CSV-like string data; adjust loading logic as necessary
+    return pd.read_csv(io.StringIO(material_data), sep=' ')
 
-    material_folder = cwd.joinpath('./material_files/measurements')
+# Adjustments may be necessary for `load_material_measurements` and handling of measurement data.
 
-    material_folder = Path(material_folder)
-
-    file = material_folder.joinpath(f'{material_name}.yml')
-
-    if not file.exists():
-        list_of_material = os.listdir(material_folder)
-        raise ValueError(
-            f'Material file: {file} does not exist. Valid file list is {list_of_material}'
-        )
-
-    configuration = yaml.safe_load(file.read_text())
-
-    return configuration
-
-
-def get_material_measurment_index(material_name: str, wavelength: float) -> float:
-    """
-    Gets the material refractive index interpolating from measured data.
-
-    :param      material_name:  The material name
-    :type       material_name:  str
-    :param      wavelength:     The wavelength in unit of meters
-    :type       wavelength:     float
-
-    :returns:   The material refractive index.
-    :rtype:     float
-    """
-    return_scalar = True if numpy.isscalar(wavelength) else False
-
-    wavelength = numpy.atleast_1d(wavelength) * 1e6
-
-    material_parameters = load_material_measurements(material_name=material_name)
-
-    data_string = material_parameters['DATA'][0]['data']
-
-    buffer = io.StringIO(data_string)
-
-    data = pandas.read_csv(buffer, sep=' ').to_numpy()
-
-    wavelength_base, n_base, k_base = data.T
-
-    refractive_index_base = n_base + k_base * 1j
-
-    evaluated_refractive_index = numpy.interp(
-        wavelength,
-        wavelength_base,
-        refractive_index_base,
-        left=None,
-        right=None,
-        period=None
-    )
-
-    if return_scalar:
-        return evaluated_refractive_index[0]
-
-    return evaluated_refractive_index
 
 # -

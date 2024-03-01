@@ -93,6 +93,14 @@ def get_material_index(material_name: str, wavelength: float, subdir: str = 'sel
         pass
 
 
+def get_silica_index(wavelength: float, subdir: str = 'sellmeier') -> float:
+    return get_material_index(
+        material_name='silica',
+        wavelength=wavelength,
+        subdir=subdir
+    )
+
+
 def load_material_measurements(material_name: str) -> pd.DataFrame:
     """
     Loads material measurement data into a pandas DataFrame.

@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import io
-import numpy as np
-import pandas as pd
+import numpy
+import pandas
 import yaml
 from pathlib import Path
+from typing import Iterable
 
 
 def get_material_files_dir(subdir: str) -> Path:
@@ -38,7 +39,7 @@ def list_material_files():
     print('\n'.join(f'\t{m}' for m in measurement_files))
 
 
-def load_yaml_file(file_path: Path) -> dict:
+def load_yaml_file(file_path: Path | str) -> dict:
     """
     Loads a YAML file into a dictionary.
 
@@ -48,9 +49,12 @@ def load_yaml_file(file_path: Path) -> dict:
     Returns:
     - A dictionary containing the YAML file content.
     """
+    if isinstance(file_path, str):
+        file_path = Path(file_path)
+
     if not file_path.exists():
         available = '\n'.join(f.stem for f in file_path.parent.glob('*.yaml'))
-        raise FileNotFoundError(f'File not found: \n{available}')
+        raise FileNotFoundError(f'File: {file_path} not found: \n{available}')
     return yaml.safe_load(file_path.read_text())
 
 
@@ -69,7 +73,27 @@ def dispersion_formula(parameters: dict, wavelength: float) -> float:
     B = [parameters.get(f'B_{i}') for i in range(1, 4)]
     C = [parameters.get(f'C_{i}')**2 if parameters['C_squared'] else parameters.get(f'C_{i}') for i in range(1, 4)]
     index_squared = 1 + sum(B[i] * wavelength_um**2 / (wavelength_um**2 - C[i]) for i in range(3))
-    return np.sqrt(index_squared)
+    return numpy.sqrt(index_squared)
+
+
+def get_index_from_measurements(parameters: dict, wavelength: float | Iterable) -> float | Iterable:
+    data_string = parameters['DATA'][0]['data']
+
+    buffer = io.StringIO(data_string)
+    data = pandas.read_csv(buffer, sep=' ').to_numpy()
+    wavelength_base, n_base, k_base = data.T
+    refractive_index_base = n_base + k_base * 1j
+
+    evaluated_refractive_index = numpy.interp(
+        wavelength * 1e6,
+        wavelength_base,
+        refractive_index_base,
+        left=None,
+        right=None,
+        period=None
+    )
+
+    return evaluated_refractive_index
 
 
 def get_material_index(material_name: str, wavelength: float, subdir: str = 'sellmeier') -> float:
@@ -84,13 +108,19 @@ def get_material_index(material_name: str, wavelength: float, subdir: str = 'sel
     Returns:
     - The material refractive index.
     """
+    assert subdir in ['sellmeier', 'measurements'], f'Invalid subdir input: {subdir}. Valid has to be either "sellmeier" or "measurements" '
+
+    wavelength = numpy.asarray(wavelength)
+
     file_path = get_material_files_dir(subdir) / f'{material_name}.yaml'
+
     parameters = load_yaml_file(file_path)
+
     if subdir == 'sellmeier':
-        return dispersion_formula(parameters['sellmeier'], wavelength)
+        return dispersion_formula(parameters=parameters['sellmeier'], wavelength=wavelength)
+
     else:
-        # Handle measurement data logic here if needed.
-        pass
+        return get_index_from_measurements(parameters=parameters, wavelength=wavelength)
 
 
 def get_silica_index(wavelength: float, subdir: str = 'sellmeier') -> float:
@@ -99,23 +129,6 @@ def get_silica_index(wavelength: float, subdir: str = 'sellmeier') -> float:
         wavelength=wavelength,
         subdir=subdir
     )
-
-
-def load_material_measurements(material_name: str) -> pd.DataFrame:
-    """
-    Loads material measurement data into a pandas DataFrame.
-
-    Parameters:
-    - material_name: The name of the material.
-
-    Returns:
-    - A pandas DataFrame containing the material measurement data.
-    """
-    material_data = get_material_index(material_name, 0, 'measurements')  # Example use, adjust as necessary
-    # Assuming material_data contains CSV-like string data; adjust loading logic as necessary
-    return pd.read_csv(io.StringIO(material_data), sep=' ')
-
-# Adjustments may be necessary for `load_material_measurements` and handling of measurement data.
 
 
 # -

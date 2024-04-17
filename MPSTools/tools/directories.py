@@ -15,9 +15,16 @@ __all__ = [
     'version_path',
 ]
 
+
 root_path = Path(MPSTools.__path__[0])
 
 project_path = root_path.parents[0]
+
+
+material_path = root_path.joinpath('material_catalogue')
+material_file_path = material_path.joinpath('material_files')
+sellmeier_file_path = material_file_path.joinpath('sellmeier')
+measurements_file_path = material_file_path.joinpath('measurements')
 
 doc_path = root_path.parents[0].joinpath('docs')
 
@@ -31,11 +38,5 @@ logo_path = doc_path.joinpath('images/logo.png')
 
 version_path = root_path.joinpath('VERSION')
 
-
-if __name__ == '__main__':
-    for path_name in __all__:
-        path = locals()[path_name]
-        print(path)
-        assert path.exists(), f"Path {path_name} do not exists"
 
 # -

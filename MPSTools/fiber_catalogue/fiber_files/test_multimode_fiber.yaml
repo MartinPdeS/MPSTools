@@ -9,6 +9,6 @@ layers:
 
   layer_2:
     name: 'core'
-    radius: 21.0e-6
+    radius: 20.0e-6
     NA: 0.13
 

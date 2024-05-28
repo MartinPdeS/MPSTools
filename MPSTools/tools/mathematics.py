@@ -6,12 +6,12 @@ import numpy
 
 
 def get_rho_gradient(mesh: numpy.ndarray, coordinate_system) -> numpy.ndarray:
-    """
+    r"""
     Gets the gradient in the rho component axis (polar coordinate).
     Equation is given as:
     .. math:
-        \\partial{f}{r} &= \\partial{f}{x} \\partial{x}{r} \\partial{f}{y} \\partial{y}{r} \\
-        \\partial{f}{r} &= \\partial{f}{x} \\cos(\theta) \\partial{f}{y} \\sin(\theta)
+        \partial{f}{r} &= \partial{f}{x} \partial{x}{r} \partial{f}{y} \partial{y}{r} \\
+        \partial{f}{r} &= \partial{f}{x} \cos(\theta) \partial{f}{y} \sin(\theta)
 
 
     :param      mesh:             The mesh

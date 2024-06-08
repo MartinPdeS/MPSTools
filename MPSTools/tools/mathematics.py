@@ -48,7 +48,7 @@ def gradientO4(f, *varargs) -> tuple:
        to each dimension.
     """
     N = len(f.shape)  # number of dimensions
-    n = len(varargs)
+    n = len(varargs)  # noqa: F841
     dx = list(varargs)
 
     # use central differences on interior and first differences on endpoints

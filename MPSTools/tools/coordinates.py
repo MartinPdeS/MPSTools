@@ -3,7 +3,6 @@
 
 import numpy
 from dataclasses import dataclass
-from typing import Self
 
 from MPSPlots import render2D, render3D
 
@@ -298,10 +297,10 @@ class CartesianCoordinates:
 
         return cylindrical_coordinate
 
-    def to_cartesian(self) -> Self:
+    def to_cartesian(self) -> 'CartesianCoordinates':
         return self
 
-    def shift_coordinates(self, shift: tuple) -> Self:
+    def shift_coordinates(self, shift: tuple) -> 'CartesianCoordinates':
         """
         Shift the coordinates with a certain values
 
@@ -309,7 +308,7 @@ class CartesianCoordinates:
         :type       shift:  tuple
 
         :returns:   The self instance
-        :rtype:     Self
+        :rtype:     CartesianCoordinates
         """
         coordinates = (self.x, self.y, self.z)
         for coordinate, element in zip(coordinates, shift):
@@ -317,7 +316,7 @@ class CartesianCoordinates:
 
         return self
 
-    def scale_coordinates(self, scale: tuple) -> Self:
+    def scale_coordinates(self, scale: tuple) -> 'CartesianCoordinates':
         """
         Scale the coordinates with a certain factor
 
@@ -325,7 +324,7 @@ class CartesianCoordinates:
         :type       scale:  tuple
 
         :returns:   The self instance
-        :rtype:     Self
+        :rtype:     CartesianCoordinates
         """
         coordinates = (self.x, self.y, self.z)
         for coordinate, element in zip(coordinates, scale):
